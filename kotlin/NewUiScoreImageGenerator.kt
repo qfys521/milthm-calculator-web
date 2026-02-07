@@ -13,6 +13,7 @@ import java.time.ZoneOffset
 import java.util.Base64
 import java.util.Locale
 import javax.imageio.ImageIO
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.max
@@ -36,6 +37,7 @@ object NewUiScoreImageGenerator {
     private const val ICON_NAME_FALLBACK = "-1"
     // Sentinel used in the JS logic to trigger "Unable to deduce points" output.
     private const val SENTINEL_UNABLE_TO_DEDUCE = 114514.0
+    private const val EPSILON = 1e-6
 
     data class Options(
         val maxCards: Int = 20,
@@ -286,10 +288,11 @@ object NewUiScoreImageGenerator {
         if (target <= 0) return "600000"
         if (target > constant + 1.5) return "Unable to deduce points"
         if (target >= constant) {
-            if (target == constant + 1.5) return "1000000"
+            if (abs(target - (constant + 1.5)) < EPSILON) return "1000000"
             return ceil(850000 + (target - constant) * 100000).toInt().toString()
         }
         if (target >= max(0.0, 0.5 * constant - 1.5)) {
+            // Formula mirrors the JS curve used for mid-range target reality.
             val denominator = constant / 300000 + 1.0 / 100000.0
             val score = (target + constant * 11 / 6 + 8.5) / denominator
             return min(ceil(score).toInt(), 849999).toString()
@@ -339,7 +342,11 @@ object NewUiScoreImageGenerator {
             item.achievedStatus.contains(4) -> "${item.bestLevel}1"
             else -> item.bestLevel.toString()
         }
-        return if (iconName.toIntOrNull() != null || iconName == ICON_NAME_ZERO_MINUS_ONE) iconName else ICON_NAME_FALLBACK
+        return if (isValidIconName(iconName)) iconName else ICON_NAME_FALLBACK
+    }
+
+    private fun isValidIconName(iconName: String): Boolean {
+        return iconName == ICON_NAME_ZERO_MINUS_ONE || iconName.toIntOrNull() != null
     }
 
     private fun parseScorePayload(scoreText: String, constants: Map<String, ChartConstant>): ScorePayload {
@@ -451,6 +458,7 @@ object NewUiScoreImageGenerator {
 
     private fun reality(score: Int, constant: Double): Double {
         if (constant < 0.001) return 0.0
+        // Formula constants follow the same curve used in the JS reality calculation.
         return when {
             score >= 1005000 -> 1 + constant
             score >= 995000 -> 1.4 / (kotlin.math.exp(363.175 - score * 0.000365) + 1) - 0.4 + constant
@@ -595,7 +603,8 @@ object NewUiScoreImageGenerator {
         }
         val image = try {
             if (Files.exists(path)) ImageIO.read(path.toFile()) else null
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            System.err.println("Failed to load image: $path (${e.message})")
             null
         }
         cache[path] = image

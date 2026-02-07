@@ -282,6 +282,7 @@ object NewUiScoreImageGenerator {
     }
 
     private fun findScoreText(constant: Double, target: Double): String {
+        if (target == SENTINEL_UNABLE_TO_DEDUCE) return "Unable to deduce points"
         if (target <= 0) return "600000"
         if (target > constant + 1.5) return "Unable to deduce points"
         if (target >= constant) {
@@ -512,8 +513,8 @@ object NewUiScoreImageGenerator {
             val tokens = splitArrayTokens(raw)
             if (tokens.isEmpty()) return@forEach
             val adjusted = tokens.toMutableList()
-            val secondNumber = adjusted.getOrNull(1)?.toDoubleOrNull()
-            if (secondNumber == null) {
+            val constantv3OrNull = adjusted.getOrNull(1)?.toDoubleOrNull()
+            if (constantv3OrNull == null) {
                 adjusted.add(1, adjusted.getOrNull(0).orEmpty())
             }
             val constant = adjusted.getOrNull(0)?.toDoubleOrNull() ?: 0.0
@@ -537,7 +538,7 @@ object NewUiScoreImageGenerator {
             val ch = raw[i]
             if (inString) {
                 buf.append(ch)
-                if (ch == stringChar && (i == 0 || raw[i - 1] != '\\')) {
+                if (ch == stringChar && !isEscaped(raw, i)) {
                     inString = false
                 }
             } else {
@@ -568,6 +569,16 @@ object NewUiScoreImageGenerator {
             return trimmed.substring(1, trimmed.length - 1)
         }
         return trimmed
+    }
+
+    private fun isEscaped(text: String, index: Int): Boolean {
+        var backslashes = 0
+        var i = index - 1
+        while (i >= 0 && text[i] == '\\') {
+            backslashes++
+            i--
+        }
+        return backslashes % 2 == 1
     }
 
     private fun loadTips(path: Path): List<String> {

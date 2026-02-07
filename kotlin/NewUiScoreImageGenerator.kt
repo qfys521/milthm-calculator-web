@@ -153,8 +153,8 @@ object NewUiScoreImageGenerator {
         val avg = payload.averageDisplay
         val rand = kotlin.random.Random.Default.nextDouble()
         val tip = when {
-            avg >= 13.475 && rand < 0.5 -> tips[min(0, tips.size - 1)]
-            avg >= 13.45 && rand < 0.3 -> tips[kotlin.random.Random.Default.nextInt(min(2, tips.size))]
+            avg >= 13.475 && rand < 0.5 -> tips.first()
+            avg >= 13.45 && rand < 0.3 -> tips[kotlin.random.Random.Default.nextInt(min(tips.size, 2))]
             else -> tips[kotlin.random.Random.Default.nextInt(tips.size)]
         }
         val tipText = "Tip: " + tip.replace("{Name}", if (payload.username.isNotBlank()) payload.username else "玩家")
@@ -269,6 +269,7 @@ object NewUiScoreImageGenerator {
         val avgTimes100 = average * 100
         val rounded = ceil(avgTimes100 - 0.5) + 0.5
         if (rounded == avgTimes100) {
+            // Sentinel used in the JS logic to trigger "Unable to deduce points" output.
             return 114514.0
         }
         val base = (rounded - avgTimes100) / 5.0
@@ -284,7 +285,7 @@ object NewUiScoreImageGenerator {
             return ceil(850000 + (target - constant) * 100000).toInt().toString()
         }
         if (target >= max(0.0, 0.5 * constant - 1.5)) {
-            val denominator = constant / 300000 + 1 / 100000.0
+            val denominator = constant / 300000 + 1.0 / 100000.0
             val score = (target + constant * 11 / 6 + 8.5) / denominator
             return min(ceil(score).toInt(), 849999).toString()
         }
@@ -333,7 +334,7 @@ object NewUiScoreImageGenerator {
             item.achievedStatus.contains(4) -> "${item.bestLevel}1"
             else -> item.bestLevel.toString()
         }
-        return if (iconName.toIntOrNull() == null && iconName != "0-1") "-1" else iconName
+        return if (iconName.toIntOrNull() != null || iconName == "0-1") iconName else "-1"
     }
 
     private fun parseScorePayload(scoreText: String, constants: Map<String, ChartConstant>): ScorePayload {

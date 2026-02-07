@@ -83,7 +83,7 @@ object NewUiImageGenerator {
         return grouped
     }
 
-    private fun drawTextWithBg(g: java.awt.Graphics2D, text: String, x: Int, y: Int, fontSize: Int) {
+    private fun drawTextWithBackground(g: java.awt.Graphics2D, text: String, x: Int, y: Int, fontSize: Int) {
         g.font = Font("SansSerif", Font.PLAIN, fontSize)
         val metrics = g.fontMetrics
         val padding = 20
@@ -146,7 +146,7 @@ object NewUiImageGenerator {
 
         g.color = SEMI_BLACK
         g.fillRect(0, 15, CANVAS_WIDTH, 85)
-        drawTextWithBg(g, "Milthm Chart Constant Table", TITLE_X, TITLE_Y, TITLE_FONT_SIZE)
+        drawTextWithBackground(g, "Milthm Chart Constant Table", TITLE_X, TITLE_Y, TITLE_FONT_SIZE)
 
         var currentY = START_Y
         val sortedKeys = keys.sortedByDescending { it.toDouble() }
@@ -159,12 +159,12 @@ object NewUiImageGenerator {
                 currentY + LEVEL_FONT_SIZE
             }
 
-            drawTextWithBg(g, "► $key", LEVEL_TEXT_X, levelTextY, LEVEL_FONT_SIZE)
+            drawTextWithBackground(g, "► $key", LEVEL_TEXT_X, levelTextY, LEVEL_FONT_SIZE)
 
             if (count > 0) {
                 var rowX = START_X
                 var rowY = currentY
-                var coverCount = 0
+                var coversInRow = 0
                 for (song in titles) {
                     val coverPath = jpgsFolder.resolve("${song.title}.jpg")
                     val coverImg = loadImageSafe(coverPath)
@@ -179,11 +179,12 @@ object NewUiImageGenerator {
                     g.color = DIFFICULTY_COLORS[song.difficulty] ?: DIFFICULTY_COLORS.getValue("DEFAULT")
                     g.drawRect(rowX, rowY, COVER_W, COVER_H)
 
-                    coverCount++
+                    coversInRow++
                     rowX += COVER_W + H_SPACING
-                    if (coverCount % COVERS_PER_ROW == 0) {
+                    if (coversInRow == COVERS_PER_ROW) {
                         rowX = START_X
                         rowY += COVER_H + V_SPACING
+                        coversInRow = 0
                     }
                 }
 

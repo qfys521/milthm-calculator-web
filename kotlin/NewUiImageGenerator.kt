@@ -39,7 +39,7 @@ object NewUiImageGenerator {
     private fun parseConstantJs(path: Path): List<Song> {
         val content = Files.readString(path)
         val match = Regex("\\{([\\s\\S]*)\\}").find(content)
-            ?: throw IllegalArgumentException("未找到 constantsData 内容")
+            ?: throw IllegalArgumentException("constantsData content not found")
         val body = match.groupValues[1]
         val entries = Regex("\"[^\"]+\": \\[([^\\]]+)]").findAll(body)
         val result = mutableListOf<Song>()
@@ -117,7 +117,7 @@ object NewUiImageGenerator {
         val filtered = parseArgs(allData, difficulty, minVal, maxVal)
         val grouped = groupByLevel(filtered)
         val keys = grouped.filterValues { it.isNotEmpty() }.keys
-        require(keys.isNotEmpty()) { "没有符合条件的曲目" }
+        require(keys.isNotEmpty()) { "No songs match the criteria" }
 
         var totalHeight = START_Y
         for (key in keys) {
@@ -164,7 +164,7 @@ object NewUiImageGenerator {
             if (count > 0) {
                 var rowX = START_X
                 var rowY = currentY
-                var c = 0
+                var coverCount = 0
                 for (song in titles) {
                     val coverPath = jpgsFolder.resolve("${song.title}.jpg")
                     val coverImg = loadImageSafe(coverPath)
@@ -179,9 +179,9 @@ object NewUiImageGenerator {
                     g.color = DIFFICULTY_COLORS[song.difficulty] ?: DIFFICULTY_COLORS.getValue("DEFAULT")
                     g.drawRect(rowX, rowY, COVER_W, COVER_H)
 
-                    c++
+                    coverCount++
                     rowX += COVER_W + H_SPACING
-                    if (c % COVERS_PER_ROW == 0) {
+                    if (coverCount % COVERS_PER_ROW == 0) {
                         rowX = START_X
                         rowY += COVER_H + V_SPACING
                     }

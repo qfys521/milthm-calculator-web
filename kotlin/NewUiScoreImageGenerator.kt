@@ -43,6 +43,21 @@ object NewUiScoreImageGenerator {
     private const val TOP_REALITY_INDEX = TOP_REALITY_COUNT - 1
     // Matches constant.js: yct defaults to ceil(constantv3 * 20).
     private const val YCT_MULTIPLIER = 20
+    // Reality (v2) curve constants derived from the JS implementation.
+    private const val REALITY_V2_MAX_SCORE = 1005000
+    private const val REALITY_V2_HIGH_SCORE = 995000
+    private const val REALITY_V2_HIGH_MULTIPLIER = 1.4
+    private const val REALITY_V2_HIGH_EXP_OFFSET = 363.175
+    private const val REALITY_V2_HIGH_EXP_SCALE = 0.000365
+    private const val REALITY_V2_HIGH_SHIFT = -0.4
+    private const val REALITY_V2_MID_SCORE = 980000
+    private const val REALITY_V2_MID_EXP_FACTOR = 3.1
+    private const val REALITY_V2_MID_RANGE = 15000.0
+    private const val REALITY_V2_MID_SCALE = 0.8
+    private const val REALITY_V2_MID_SHIFT = -0.5
+    private const val REALITY_V2_LOW_SCORE = 700000
+    private const val REALITY_V2_LOW_DIVISOR = 280000.0
+    private const val REALITY_V2_LOW_SHIFT = -4.0
 
     data class Options(
         val maxCards: Int = 20,
@@ -214,7 +229,7 @@ object NewUiScoreImageGenerator {
             g.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT)
 
             g.font = Font("Arial", Font.PLAIN, 17)
-            g.color = if (index < 20) Color(0xFA, 0xFA, 0xFA) else Color(0xC9, 0xC9, 0xC9)
+            g.color = if (index < TOP_REALITY_COUNT) Color(0xFA, 0xFA, 0xFA) else Color(0xC9, 0xC9, 0xC9)
             g.drawString("#${index + 1}", x + CARD_WIDTH - 35, y + 24)
 
             val scoreStr = String.format(Locale.US, "%07d", item.bestScore)
@@ -470,11 +485,13 @@ object NewUiScoreImageGenerator {
         if (constant < 0.001) return 0.0
         // Formula constants follow the same curve used in the JS reality calculation.
         return when {
-            score >= 1005000 -> 1 + constant
-            score >= 995000 -> 1.4 / (kotlin.math.exp(363.175 - score * 0.000365) + 1) - 0.4 + constant
-            score >= 980000 -> ((kotlin.math.exp(3.1 * (score - 980000) / 15000) - 1) /
-                (kotlin.math.exp(3.1) - 1)) * 0.8 - 0.5 + constant
-            score >= 700000 -> score / 280000.0 - 4 + constant
+            score >= REALITY_V2_MAX_SCORE -> 1 + constant
+            score >= REALITY_V2_HIGH_SCORE -> REALITY_V2_HIGH_MULTIPLIER /
+                (kotlin.math.exp(REALITY_V2_HIGH_EXP_OFFSET - score * REALITY_V2_HIGH_EXP_SCALE) + 1) +
+                REALITY_V2_HIGH_SHIFT + constant
+            score >= REALITY_V2_MID_SCORE -> ((kotlin.math.exp(REALITY_V2_MID_EXP_FACTOR * (score - REALITY_V2_MID_SCORE) / REALITY_V2_MID_RANGE) - 1) /
+                (kotlin.math.exp(REALITY_V2_MID_EXP_FACTOR) - 1)) * REALITY_V2_MID_SCALE + REALITY_V2_MID_SHIFT + constant
+            score >= REALITY_V2_LOW_SCORE -> score / REALITY_V2_LOW_DIVISOR + REALITY_V2_LOW_SHIFT + constant
             else -> 0.0
         }
     }

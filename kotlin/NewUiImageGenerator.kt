@@ -3,7 +3,6 @@ import java.awt.Color
 import java.awt.Font
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
-import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Locale
 import javax.imageio.ImageIO
@@ -37,7 +36,7 @@ object NewUiImageGenerator {
     data class Song(val level: Double, val difficulty: String, val title: String)
 
     private fun parseConstantJs(path: Path): List<Song> {
-        val content = Files.readString(path)
+        val content = ResourceLoader.readText(path)
         val match = Regex("\\{([\\s\\S]*)\\}").find(content)
             ?: throw IllegalArgumentException("constantsData content not found")
         val body = match.groupValues[1]
@@ -98,11 +97,7 @@ object NewUiImageGenerator {
     }
 
     private fun loadImageSafe(path: Path): BufferedImage? {
-        return try {
-            if (Files.exists(path)) ImageIO.read(path.toFile()) else null
-        } catch (_: Exception) {
-            null
-        }
+        return ResourceLoader.loadImage(path)
     }
 
     fun generateTable(

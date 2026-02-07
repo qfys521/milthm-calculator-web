@@ -5,7 +5,6 @@ import java.awt.GradientPaint
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
-import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDate
 import java.time.LocalTime
@@ -536,7 +535,7 @@ object NewUiScoreImageGenerator {
     }
 
     private fun loadConstants(path: Path): Map<String, ChartConstant> {
-        val content = Files.readString(path)
+        val content = ResourceLoader.readText(path)
         val match = Regex("const\\s+constantsData\\s*=\\s*\\{([\\s\\S]*?)\\};").find(content)
             ?: error("constantsData block not found")
         val body = match.groupValues[1]
@@ -618,11 +617,7 @@ object NewUiScoreImageGenerator {
     }
 
     private fun loadTips(path: Path): List<String> {
-        return if (Files.exists(path)) {
-            Files.readAllLines(path).map { it.trim() }.filter { it.isNotEmpty() }
-        } else {
-            emptyList()
-        }
+        return ResourceLoader.readLines(path)
     }
 
     private fun loadImageSafe(path: Path, cache: MutableMap<Path, BufferedImage?> = mutableMapOf()): BufferedImage? {
@@ -630,7 +625,7 @@ object NewUiScoreImageGenerator {
             return cache[path]
         }
         val image = try {
-            if (Files.exists(path)) ImageIO.read(path.toFile()) else null
+            ResourceLoader.loadImage(path)
         } catch (e: Exception) {
             System.err.println("Failed to load image: $path (${e.message})")
             null

@@ -31,6 +31,11 @@ object NewUiScoreImageGenerator {
     private const val CARD_Y = 350
     private const val CARD_COL_GAP = 520
     private const val CARD_ROW_GAP = 162.5
+    private const val DEFAULT_PLAYER_NAME = "玩家"
+    private const val ICON_NAME_ZERO_MINUS_ONE = "0-1"
+    private const val ICON_NAME_FALLBACK = "-1"
+    // Sentinel used in the JS logic to trigger "Unable to deduce points" output.
+    private const val SENTINEL_UNABLE_TO_DEDUCE = 114514.0
 
     data class Options(
         val maxCards: Int = 20,
@@ -157,7 +162,7 @@ object NewUiScoreImageGenerator {
             avg >= 13.45 && rand < 0.3 -> tips[kotlin.random.Random.Default.nextInt(min(tips.size, 2))]
             else -> tips[kotlin.random.Random.Default.nextInt(tips.size)]
         }
-        val tipText = "Tip: " + tip.replace("{Name}", if (payload.username.isNotBlank()) payload.username else "玩家")
+        val tipText = "Tip: " + tip.replace("{Name}", if (payload.username.isNotBlank()) payload.username else DEFAULT_PLAYER_NAME)
 
         val maxWidth = 500
         val lineHeight = 24
@@ -269,8 +274,7 @@ object NewUiScoreImageGenerator {
         val avgTimes100 = average * 100
         val rounded = ceil(avgTimes100 - 0.5) + 0.5
         if (rounded == avgTimes100) {
-            // Sentinel used in the JS logic to trigger "Unable to deduce points" output.
-            return 114514.0
+            return SENTINEL_UNABLE_TO_DEDUCE
         }
         val base = (rounded - avgTimes100) / 5.0
         val baseline = max(item.singleRealityRaw, items.getOrNull(19)?.singleRealityRaw ?: 0.0)
@@ -334,7 +338,7 @@ object NewUiScoreImageGenerator {
             item.achievedStatus.contains(4) -> "${item.bestLevel}1"
             else -> item.bestLevel.toString()
         }
-        return if (iconName.toIntOrNull() != null || iconName == "0-1") iconName else "-1"
+        return if (iconName.toIntOrNull() != null || iconName == ICON_NAME_ZERO_MINUS_ONE) iconName else ICON_NAME_FALLBACK
     }
 
     private fun parseScorePayload(scoreText: String, constants: Map<String, ChartConstant>): ScorePayload {

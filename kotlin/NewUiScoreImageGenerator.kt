@@ -38,6 +38,9 @@ object NewUiScoreImageGenerator {
     // Sentinel used in the JS logic to trigger "Unable to deduce points" output.
     private const val SENTINEL_UNABLE_TO_DEDUCE = 114514.0
     private const val EPSILON = 1e-6
+    private const val CARD_EVEN_ROW_OFFSET = 50
+    private const val TOP_REALITY_COUNT = 20
+    private const val TOP_REALITY_INDEX = TOP_REALITY_COUNT - 1
     // Matches constant.js: yct defaults to ceil(constantv3 * 20).
     private const val YCT_MULTIPLIER = 20
 
@@ -161,11 +164,13 @@ object NewUiScoreImageGenerator {
         }
         val avg = payload.averageDisplay
         val rand = kotlin.random.Random.Default.nextDouble()
-        val tip = when {
-            avg >= 13.475 && rand < 0.5 -> tips.first()
-            avg >= 13.45 && rand < 0.3 -> tips[kotlin.random.Random.Default.nextInt(min(tips.size, 2))]
-            else -> tips[kotlin.random.Random.Default.nextInt(tips.size)]
+        val preferredCount = when {
+            avg >= 13.475 && rand < 0.5 -> 1
+            avg >= 13.45 && rand < 0.3 -> 2
+            else -> tips.size
         }
+        val tipCount = max(1, min(preferredCount, tips.size))
+        val tip = tips[kotlin.random.Random.Default.nextInt(tipCount)]
         val tipText = "Tip: " + tip.replace("{Name}", if (payload.username.isNotBlank()) payload.username else DEFAULT_PLAYER_NAME)
 
         val maxWidth = 500
@@ -200,7 +205,8 @@ object NewUiScoreImageGenerator {
         val imageCache = mutableMapOf<Path, BufferedImage?>()
         items.forEachIndexed { index, item ->
             val x = CARD_X + (index % 2) * CARD_COL_GAP
-            val y = (CARD_Y + kotlin.math.floor(index / 2.0 * CARD_ROW_GAP)).toInt() - if (index % 2 == 0) 50 else 0
+            val y = (CARD_Y + kotlin.math.floor(index / 2.0 * CARD_ROW_GAP)).toInt() -
+                if (index % 2 == 0) CARD_EVEN_ROW_OFFSET else 0
 
             val scoreIsV3 = item.isV3 || item.bestLevel <= 1 || item.bestScore >= 1005000 ||
                 item.achievedStatus.contains(2) || item.achievedStatus.contains(5)
@@ -281,7 +287,7 @@ object NewUiScoreImageGenerator {
             return SENTINEL_UNABLE_TO_DEDUCE
         }
         val base = (rounded - avgTimes100) / 5.0
-        val baseline = max(item.singleRealityRaw, items.getOrNull(19)?.singleRealityRaw ?: 0.0)
+        val baseline = max(item.singleRealityRaw, items.getOrNull(TOP_REALITY_INDEX)?.singleRealityRaw ?: 0.0)
         return base + baseline
     }
 
@@ -299,7 +305,7 @@ object NewUiScoreImageGenerator {
             val score = (target + constant * 11 / 6 + 8.5) / denominator
             return min(ceil(score).toInt(), 849999).toString()
         }
-        // constant == 3 is a special case to avoid divide-by-zero in the JS formula.
+        // constant == 3 makes (constant - 3) zero in the JS formula, so return the base score.
         if (kotlin.math.abs(constant - 3) < EPSILON) return "600000"
         val score = 600000 + (target * 200000) / (constant - 3)
         return min(ceil(score).toInt(), 699999).toString()
@@ -379,10 +385,10 @@ object NewUiScoreImageGenerator {
     private fun computeAverage(items: List<ScoreItem>): Double {
         val values = items.filter { it.singleRealityRaw > 0 }
             .sortedByDescending { it.singleRealityRaw }
-            .take(20)
+            .take(TOP_REALITY_COUNT)
             .map { it.singleRealityRaw }
         if (values.isEmpty()) return 0.0
-        return values.sum() / 20.0
+        return values.sum() / TOP_REALITY_COUNT.toDouble()
     }
 
     private fun processRecord(
@@ -525,6 +531,7 @@ object NewUiScoreImageGenerator {
             val tokens = splitArrayTokens(raw)
             if (tokens.isEmpty()) return@forEach
             val adjusted = tokens.toMutableList()
+            // When constantv3 is missing in constantsData, default it to the constant value.
             val constantv3OrNull = adjusted.getOrNull(1)?.toDoubleOrNull()
             if (constantv3OrNull == null) {
                 adjusted.add(1, adjusted.getOrNull(0).orEmpty())
@@ -714,6 +721,9 @@ object NewUiScoreImageGenerator {
                 'r' -> '\r'
                 't' -> '\t'
                 'u' -> {
+                    if (index + 4 > input.length) {
+                        error("Invalid JSON unicode escape at position ${index - 2}")
+                    }
                     val hex = input.substring(index, index + 4)
                     index += 4
                     hex.toInt(16).toChar()

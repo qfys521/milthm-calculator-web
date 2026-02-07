@@ -38,6 +38,8 @@ object NewUiScoreImageGenerator {
     // Sentinel used in the JS logic to trigger "Unable to deduce points" output.
     private const val SENTINEL_UNABLE_TO_DEDUCE = 114514.0
     private const val EPSILON = 1e-6
+    // Matches constant.js: yct defaults to ceil(constantv3 * 20).
+    private const val YCT_MULTIPLIER = 20
 
     data class Options(
         val maxCards: Int = 20,
@@ -297,7 +299,8 @@ object NewUiScoreImageGenerator {
             val score = (target + constant * 11 / 6 + 8.5) / denominator
             return min(ceil(score).toInt(), 849999).toString()
         }
-        if (kotlin.math.abs(constant - 3) < 1e-6) return "600000"
+        // constant == 3 is a special case to avoid divide-by-zero in the JS formula.
+        if (kotlin.math.abs(constant - 3) < EPSILON) return "600000"
         val score = 600000 + (target * 200000) / (constant - 3)
         return min(ceil(score).toInt(), 699999).toString()
     }
@@ -439,6 +442,7 @@ object NewUiScoreImageGenerator {
             val mergedStatus = (prev.achievedStatus + item.achievedStatus).distinct().sorted()
             val bestScore = max(prev.bestScore, item.bestScore)
             val bestAccuracy = max(prev.bestAccuracy, item.bestAccuracy)
+            // Lower level value is preferred for merged records, mirroring the JS behavior.
             val bestLevel = min(prev.bestLevel, item.bestLevel)
             val singleRealityRaw = max(prev.singleRealityRaw, item.singleRealityRaw)
             val singleReality = String.format(Locale.US, "%.2f", singleRealityRaw)
@@ -530,7 +534,7 @@ object NewUiScoreImageGenerator {
             val category = stripQuotes(adjusted.getOrNull(2).orEmpty())
             val name = stripQuotes(adjusted.getOrNull(3).orEmpty())
             val yctRaw = adjusted.getOrNull(4)?.toDoubleOrNull()
-            val yct = yctRaw ?: ceil(constantv3 * 20)
+            val yct = yctRaw ?: ceil(constantv3 * YCT_MULTIPLIER)
             result[id] = ChartConstant(constant, constantv3, category, name, yct)
         }
         return result

@@ -2,6 +2,14 @@
 
 本项目is under the WTFPL.
 
+## Kotlin 查分图库
+
+`kotlin/NewUiScoreImageGenerator.kt` 提供纯 Kotlin 的新版查分图生成器：
+
+```kotlin
+val base64 = NewUiScoreImageGenerator.generateScoreImageBase64(scoreString)
+```
+
 ## 这里是一个分支，[原存储库](https://bitbucket.org/lmsdscav/milthm-calculator-web/)
 只包含了基础功能 如果需要 _更酷的_ 体验请前往原地址
 ## [在线服务](https://mkzi-nya.github.io/milthm-calculator-web/)

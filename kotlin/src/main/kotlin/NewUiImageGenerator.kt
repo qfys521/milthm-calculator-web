@@ -35,6 +35,10 @@ object NewUiImageGenerator {
 
     data class Song(val level: Double, val difficulty: String, val title: String)
 
+    private fun uiFont(size: Int, style: Int = Font.PLAIN): Font {
+        return FontFallback.resolve("SansSerif", style, size)
+    }
+
     private fun parseConstantJs(path: Path): List<Song> {
         val content = ResourceLoader.readText(path)
         val match = Regex("\\{([\\s\\S]*)\\}").find(content)
@@ -83,7 +87,7 @@ object NewUiImageGenerator {
     }
 
     private fun drawTextWithBackground(g: java.awt.Graphics2D, text: String, x: Int, y: Int, fontSize: Int) {
-        g.font = Font("SansSerif", Font.PLAIN, fontSize)
+        g.font = uiFont(fontSize)
         val metrics = g.fontMetrics
         val padding = 20
         val bgX = x - padding

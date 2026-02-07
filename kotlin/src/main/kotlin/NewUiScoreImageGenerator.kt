@@ -58,6 +58,10 @@ object NewUiScoreImageGenerator {
     private const val REALITY_V2_LOW_DIVISOR = 280000.0
     private const val REALITY_V2_LOW_SHIFT = -4.0
 
+    private fun uiFont(size: Int, style: Int = Font.PLAIN): Font {
+        return FontFallback.resolve("Arial", style, size)
+    }
+
     data class Options(
         val maxCards: Int = 20,
         val constantsPath: Path = Path.of("./js/constant.js"),
@@ -145,7 +149,7 @@ object NewUiScoreImageGenerator {
         g.drawLine(550, 250, 650, 50)
 
         val star = computeStar(payload.items)
-        g.font = Font("Arial", Font.PLAIN, 25)
+        g.font = uiFont(25)
         g.color = Color.WHITE
         g.drawString(star, 660, 75)
 
@@ -157,16 +161,16 @@ object NewUiScoreImageGenerator {
         g.drawString("Date: $dateStr", 660, 190)
         drawTip(g, payload, tipsPath)
 
-        g.font = Font("Arial", Font.PLAIN, 50)
+        g.font = uiFont(50)
         g.drawString("Milthm-calculator", 100, 95)
-        g.font = Font("Arial", Font.PLAIN, 25)
+        g.font = uiFont(25)
         g.drawString("https://mhtlim.top/", 100, 125)
         g.drawString("http://k9.lv/c/", 100, 153)
         g.drawString("https://milcalc.netlify.app/", 100, 181)
         g.drawString("https://mkzi-nya.github.io/c/", 100, 207)
-        g.font = Font("Arial", Font.PLAIN, 30)
+        g.font = uiFont(30)
         g.drawString("←查分上这里", 400, 130)
-        g.font = Font("Arial", Font.PLAIN, 20)
+        g.font = uiFont(20)
         g.drawString("这几个网址都行", 440, 155)
         g.drawString(UPDATED_TEXT, 100, 230)
     }
@@ -189,7 +193,7 @@ object NewUiScoreImageGenerator {
 
         val maxWidth = 500
         val lineHeight = 24
-        g.font = Font("Arial", Font.PLAIN, 20)
+        g.font = uiFont(20)
         g.color = Color.WHITE
         var line = ""
         var y = 220
@@ -227,7 +231,7 @@ object NewUiScoreImageGenerator {
             g.color = if (scoreIsV3) Color(128, 128, 128, 128) else Color(128, 128, 128, 51)
             g.fillRect(x, y, CARD_WIDTH, CARD_HEIGHT)
 
-            g.font = Font("Arial", Font.PLAIN, 17)
+            g.font = uiFont(17)
             g.color = if (index < TOP_REALITY_COUNT) Color(0xFA, 0xFA, 0xFA) else Color(0xC9, 0xC9, 0xC9)
             g.drawString("#${index + 1}", x + CARD_WIDTH - 35, y + 24)
 
@@ -244,24 +248,24 @@ object NewUiScoreImageGenerator {
                 item.achievedStatus.contains(4) -> Color(0x90, 0xCA, 0xEF)
                 else -> Color.WHITE
             }
-            g.font = Font("Arial", Font.PLAIN, 39)
+            g.font = uiFont(39)
             g.paint = scorePaint
             g.drawString(scoreStr, x + 208, y + 52)
             g.paint = Color.WHITE
 
             var fontSize = 25
-            var titleFont = Font("Arial", Font.PLAIN, fontSize)
+            var titleFont = uiFont(fontSize)
             g.font = titleFont
             while (g.fontMetrics.stringWidth(item.name) > 200 && fontSize > 10) {
                 fontSize -= 1
-                titleFont = Font("Arial", Font.PLAIN, fontSize)
+                titleFont = uiFont(fontSize)
                 g.font = titleFont
             }
             g.color = Color.WHITE
             g.drawString(item.name, x + 212, y + 23)
 
             val acc = String.format(Locale.US, "%.2f%%", item.bestAccuracy * 100)
-            g.font = Font("Arial", Font.PLAIN, 20)
+            g.font = uiFont(20)
             val ratingText = String.format(
                 Locale.US,
                 "%s %.1f > %s   %s",
@@ -272,7 +276,7 @@ object NewUiScoreImageGenerator {
             )
             g.drawString(ratingText, x + 208, y + 98)
 
-            g.font = Font("Arial", Font.PLAIN, 13)
+            g.font = uiFont(13)
             val targetScore = findScoreText(
                 item.constantv3,
                 targetReality(payload.average, item, items)

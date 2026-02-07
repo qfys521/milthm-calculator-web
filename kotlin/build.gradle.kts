@@ -9,10 +9,3 @@ repositories {
 kotlin {
     jvmToolchain(17)
 }
-
-sourceSets {
-    named("main") {
-        kotlin.srcDir(".")
-        resources.srcDir("resources")
-    }
-}
